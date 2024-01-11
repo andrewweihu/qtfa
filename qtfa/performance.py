@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 import numpy as np
 from scipy import stats
 import pandas as pd
@@ -137,11 +134,16 @@ def factor_returns(factor_data, demeaned=True, group_adjust=False):
     if group_adjust:
         grouper.append('group')
 
-    weights = factor_data.groupby(grouper)['factor'] \
+    # pandas 2.1.4: as_index=False to avoid using grouper as index
+    weights = factor_data.groupby(grouper, as_index=False)['factor'] \
         .apply(to_weights, demeaned)
+    # pandas 2.1.4: the groupby-apply auto adds the first level of row index
+    weights.reset_index(level=0, drop=True, inplace=True)
 
     if group_adjust:
         weights = weights.groupby(level='date').apply(to_weights, False)
+        # pandas 2.1.4: the groupby-apply auto adds the first level of row index
+        weights.reset_index(level=0, drop=True, inplace=True)
 
     weighted_returns = \
         factor_data[get_forward_returns_columns(factor_data.columns)] \
@@ -552,3 +554,4 @@ def average_cumulative_return_by_quantile(
         else:
             fq = factor_data['factor_quantile']
             return fq.groupby(fq).apply(average_cumulative_return, None)
+

@@ -1,0 +1,59 @@
+[build-system]
+requires = ["poetry-core>=1.0.0", "setuptools>=46.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry]
+name = "qtfa"
+version = "0.0.1"
+description = "Quant Trading Factor Analyzer for Heimdal Group"
+authors = ["Andrew Hu <andrewweihu@gmail.com>"]
+maintainers = ["Andrew Hu <andrewweihu@gmail.com>"]
+classifiers = [
+        "Natural Language :: English",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+]
+packages = [{include = "qtfa"}]
+
+
+[[tool.poetry.source]]
+name = "conda-forge-tsinghua"
+url = "https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main"
+priority = "primary"
+
+[[tool.poetry.source]]
+name = "PyPI-tsinghua"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+priority = "primary"
+
+[[tool.poetry.source]]
+name = "PyPI-HG"
+url = "https://pypi.pkg.jetbrains.space/hg/p/main/pypi-hg/simple"
+
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pandas = ">2.0.0"
+seaborn = "^0.13.1"
+scipy = "^1.11.4"
+statsmodels = "^0.14.1"
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.3"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+ipython = "^8.18.1"
+
+[tool.poetry.group.jupyter]
+optional = true
+
+[tool.poetry.group.jupyter.dependencies]
+ipykernel = "^6.27.1"

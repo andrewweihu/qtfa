@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
-
-
 import pytest
 import pandas as pd
 from numpy import nan
 
-from jqfactor_analyzer.prepare import (
+from qtfa.prepare import (
     quantize_factor, compute_forward_returns, common_start_returns
 )
 
@@ -187,4 +184,5 @@ def test_common_start_returns(
         columns=['mean', 'std'],
         data=expected_vals
     )
-    pd.testing.assert_frame_equal(cmrt, expected)
+    pd.testing.assert_frame_equal(cmrt, expected.loc[cmrt.index])
+

@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
-
-
 import pytest
 import pandas as pd
 from numpy import nan, float64
 
-from jqfactor_analyzer.prepare import get_clean_factor_and_forward_returns
-from jqfactor_analyzer.performance import (
+from qtfa.prepare import get_clean_factor_and_forward_returns
+from qtfa.performance import (
     factor_information_coefficient,
     factor_autocorrelation,
     mean_information_coefficient,
@@ -14,7 +11,7 @@ from jqfactor_analyzer.performance import (
     factor_returns, factor_alpha_beta,
     average_cumulative_return_by_quantile
 )
-from jqfactor_analyzer.utils import get_forward_returns_columns
+from qtfa.utils import get_forward_returns_columns
 
 
 dr = pd.date_range(start='2015-1-1', end='2015-1-2')
@@ -64,6 +61,8 @@ def test_information_coefficient(factor_data,
     expected_ic_df = pd.DataFrame(index=expected_ix,
                                   columns=pd.Index(['period_1'], dtype='object'),
                                   data=expected_ic_val)
+    # pandas 2.1.4: freq member variable gets modified to be None
+    expected_ic_df.index.freq = None
 
     pd.testing.assert_frame_equal(ic, expected_ic_df)
 
@@ -77,7 +76,9 @@ def test_information_coefficient(factor_data,
         (factor_data, [1, 2, 3, 4, 4, 3, 2, 1], False, False, 'W',
          pd.DatetimeIndex(['2015-01-04'], name='date', freq='W-SUN'), [1.]),
         (factor_data, [1, 2, 3, 4, 4, 3, 2, 1], False, True, None,
-         pd.Int64Index([1, 2], name='group'), [1., 1.]),
+         # pd.Int64Index([1, 2], dtype='int64', name='group'), [1., 1.]),
+         # pandas 2.1.4: Int64Index deprecated
+         pd.RangeIndex(start=1, stop=3, dtype='int64', name='group'), [1., 1.]),
         (factor_data, [1, 2, 3, 4, 4, 3, 2, 1], False, True, 'W',
          pd.MultiIndex.from_product(
              [pd.DatetimeIndex(['2015-01-04'], name='date', freq='W-SUN'),
@@ -103,10 +104,14 @@ def test_mean_information_coefficient(factor_data,
                                       group_adjust=group_adjust,
                                       by_group=by_group,
                                       by_time=by_time)
+    # pandas 2.1.4: freq member variable gets modified to be None
+    ic.index.freq = None
 
     expected_ic_df = pd.DataFrame(index=expected_ix,
                                   columns=pd.Index(['period_1']),
                                   data=expected_ic_val)
+    # pandas 2.1.4: freq member variable gets modified to be None
+    expected_ic_df.index.freq = None
 
     pd.testing.assert_frame_equal(ic, expected_ic_df,
                                   check_index_type=False,
@@ -153,6 +158,8 @@ def test_quantile_turnover(quantile_values, test_quantile,
     expected = pd.Series(
         index=quantized_test_factor.index.levels[0], data=expected_vals)
     expected.name = test_quantile
+    # pandas 2.1.4: freq member variable gets modified to be None
+    expected.index.freq = None
 
     pd.testing.assert_series_equal(to, expected)
 
@@ -258,6 +265,8 @@ def test_factor_autocorrelation(factor_values,
     fa = factor_autocorrelation(factor_df, period)
     expected = pd.Series(index=dr, data=expected_vals)
     expected.name = period
+    # pandas 2.1.4: freq member variable gets modified to be None
+    expected.index.freq = None
 
     pd.testing.assert_series_equal(fa, expected)
 
@@ -414,3 +423,4 @@ def test_average_cumulative_return_by_quantile_2(before, after,
         index=index, columns=range(-before, after + 1), data=expected_vals
     )
     pd.testing.assert_frame_equal(avgrt, expected)
+

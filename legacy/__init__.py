@@ -2,7 +2,7 @@
 
 from .version import __version__
 from .analyze import FactorAnalyzer
-from .data import DataApi
+# from .data import DataApi
 
 
 def analyze_factor(

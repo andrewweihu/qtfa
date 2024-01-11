@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
-from __future__ import division
-
 import pandas as pd
 import numpy as np
 
@@ -84,8 +79,12 @@ def quantize_factor(
             raise ValueError('只有输入了 groupby 参数时 binning_by_group 才能为 True')
         grouper.append('group')
 
-    factor_quantile = factor_data.groupby(grouper)['factor'] \
+    # pandas 2.1.4: as_index=False to avoid adding grouper as index
+    factor_quantile = factor_data.groupby(grouper, as_index=False)['factor'] \
         .apply(quantile_calc, quantiles, bins, zero_aware, no_raise)
+    # pandas 2.1.4: the groupby-apply auto adds the first level of row index
+    factor_quantile.reset_index(level=0, drop=True, inplace=True)
+
     factor_quantile.name = 'factor_quantile'
 
     return factor_quantile.dropna()
@@ -167,14 +166,17 @@ def demean_forward_returns(factor_data, grouper=None):
         grouper = factor_data.index.get_level_values('date')
 
     cols = get_forward_returns_columns(factor_data.columns)
-    factor_data[cols] = factor_data.groupby(
-        grouper, as_index=False
-    )[cols.append(pd.Index(['weights']))].apply(
-        lambda x: x[cols].subtract(
-            np.average(x[cols], axis=0, weights=x['weights'].fillna(0.0).values),
-            axis=1
+    demeaned = factor_data.groupby(grouper, as_index=False)[cols.append(pd.Index(['weights']))] \
+        .apply(
+            lambda x: x[cols].subtract(
+                np.average(x[cols], axis=0, weights=x['weights'].fillna(0.0).values),
+                axis=1
+            )
         )
-    )
+    # pandas 2.1.4: the groupby-apply auto adds the first level of row index
+    demeaned.reset_index(level=0, drop=True, inplace=True)
+
+    factor_data[cols] = demeaned
 
     return factor_data
 
@@ -429,7 +431,7 @@ def common_start_returns(
             equities_slice |= set(demean_equities)
 
         series = returns.loc[returns.
-                             index[starting_index:ending_index], equities_slice]
+                             index[starting_index:ending_index], list(equities_slice)]
         series.index = range(
             starting_index - day_zero_index, ending_index - day_zero_index
         )
@@ -464,3 +466,4 @@ def std_conversion(period_std):
     """
     period_len = int(period_std.name.replace('period_', ''))
     return period_std / np.sqrt(period_len)
+

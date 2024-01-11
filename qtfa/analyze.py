@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import division, print_function
-
 try:
     from collections import Iterable
 except ImportError:
@@ -9,8 +5,7 @@ except ImportError:
 
 import numpy as np
 import pandas as pd
-from fastcache import lru_cache
-from cached_property import cached_property
+from functools import lru_cache, cached_property
 from scipy.stats import spearmanr, pearsonr
 from scipy import stats
 
@@ -232,7 +227,7 @@ class FactorAnalyzer(object):
         plot_disable_chinese_label: 关闭中文图例显示
         """
 
-    def __init__(self, factor, prices, groupby=None, weights=1.0,
+    def __init__(self, factor=None, prices=None, groupby=None, weights=1.0,
                  quantiles=None, bins=None, periods=(1, 5, 10),
                  binning_by_group=False, max_loss=0.25, zero_aware=False):
 
@@ -248,7 +243,9 @@ class FactorAnalyzer(object):
         self._max_loss = max_loss
         self._zero_aware = zero_aware
 
-        self.__gen_clean_factor_and_forward_returns()
+        # skip this function to hook up in-house data infra
+        if self.factor is not None and self.prices is not None:
+            self.__gen_clean_factor_and_forward_returns()
 
     def __gen_clean_factor_and_forward_returns(self):
         """格式化因子数据和定价数据"""
@@ -1471,6 +1468,8 @@ class FactorAnalyzer(object):
                                               demeaned=demeaned,
                                               group_adjust=group_adjust)
         pl.plt.show()
+
+        # this plot is not right
         self.plot_cumulative_returns_by_quantile(period=None,
                                                  demeaned=demeaned,
                                                  group_adjust=group_adjust)
@@ -1526,3 +1525,4 @@ class FactorAnalyzer(object):
         当找到中文字体但中文显示乱码时, 可调用此 API 关闭中文图例显示而使用英文
         """
         _use_chinese(False)
+

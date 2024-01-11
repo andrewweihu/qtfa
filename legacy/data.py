@@ -1,13 +1,8 @@
-# -*- coding: utf-8 -*-
-
-
-from functools import partial
-
+from functools import partial, lru_cache
 import numpy as np
 import pandas as pd
-from fastcache import lru_cache
 
-from .when import date2str
+from qtfa.when import date2str
 
 
 class DataApi(object):
@@ -303,3 +298,4 @@ class DataApi(object):
         return dict(prices=self.get_prices,
                     groupby=self.get_groupby,
                     weights=self.get_weights)
+
