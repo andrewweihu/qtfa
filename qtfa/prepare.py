@@ -53,7 +53,7 @@ def quantize_factor(
     def quantile_calc(x, _quantiles, _bins, _zero_aware, _no_raise):
         try:
             if _quantiles is not None and _bins is None and not _zero_aware:
-                return pd.qcut(x, _quantiles, labels=False) + 1
+                return pd.qcut(x.to_list(), q=_quantiles, labels=False) + 1
             elif _quantiles is not None and _bins is None and _zero_aware:
                 pos_quantiles = pd.qcut(x[x >= 0], _quantiles // 2,
                                         labels=False) + _quantiles // 2 + 1
@@ -79,11 +79,9 @@ def quantize_factor(
             raise ValueError('只有输入了 groupby 参数时 binning_by_group 才能为 True')
         grouper.append('group')
 
-    # pandas 2.1.4: as_index=False to avoid adding grouper as index
-    factor_quantile = factor_data.groupby(grouper, as_index=False)['factor'] \
-        .apply(quantile_calc, quantiles, bins, zero_aware, no_raise)
-    # pandas 2.1.4: the groupby-apply auto adds the first level of row index
-    factor_quantile.reset_index(level=0, drop=True, inplace=True)
+    # pandas 2.1.4: "transform" is ideal compared to "apply"
+    factor_quantile = factor_data.groupby(grouper)['factor'] \
+        .transform(quantile_calc, quantiles, bins, zero_aware, no_raise)
 
     factor_quantile.name = 'factor_quantile'
 
@@ -248,6 +246,7 @@ def get_clean_factor(factor,
     factor_copy.index = factor_copy.index.rename(['date', 'asset'])
 
     merged_data = forward_returns.copy()
+    merged_data.index = merged_data.index.rename(['date', 'asset'])
     merged_data['factor'] = factor_copy
 
     if groupby is not None:
@@ -300,11 +299,14 @@ def get_clean_factor(factor,
     merged_data['factor_quantile'] = merged_data['factor_quantile'].astype(int)
 
     if 'weights' in merged_data.columns:
-        merged_data['weights'] = merged_data.set_index(
-            'factor_quantile', append=True
-        ).groupby(level=['date', 'factor_quantile'])['weights'].apply(
-            lambda s: s.divide(s.sum())
-        ).reset_index('factor_quantile', drop=True)
+        weights = merged_data.set_index('factor_quantile', append=True) \
+                             .groupby(level=['date', 'factor_quantile'], as_index=False)['weights'] \
+                             .apply(lambda s: s.divide(s.sum())) \
+                             .reset_index('factor_quantile', drop=True)
+        # pandas 2.1.4: the groupby-apply auto adds the first level of row index
+        weights.reset_index(level=0, drop=True, inplace=True)
+
+        merged_data['weights'] = weights
 
     binning_amount = float(len(merged_data.index))
 
